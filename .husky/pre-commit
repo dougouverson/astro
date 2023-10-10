@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+if [ "$SKIP_PRE_COMMIT" == "true" ]; then
+	exit 0
+fi
+
+npm run check
+
+lint_output=$(./node_modules/.bin/eslint . --ext .ts,.js,.astro --format=codeframe) || lint_exit_status=$?
+
+total_errors=""
+fixable_errors=""
+
+total_errors=$(echo "$lint_output" | awk "/[0-9]+ error(s?)/ { print \$1; exit }") || true
+fixable_errors=$(echo "$lint_output" | awk "/[0-9]+ error(s?) potentially fixable/ { print \$1; exit }") || true
+[ -z "$total_errors" ] && total_errors=0
+[ -z "$fixable_errors" ] && fixable_errors=0
+
+echo "$lint_output"
+
+if [ ${lint_exit_status:-0} -eq 0 ]; then
+	echo "Linting passed with no errors. Committing..."
+	exit 0
+elif [ "$total_errors" -eq "$fixable_errors" ]; then
+	echo "All $total_errors errors are potentially fixable. Committing..."
+	exit 0
+else
+	echo "Linting found errors that are not fixable. Commit aborted."
+	exit 1
+fi

@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+
+. "$(dirname -- "$0")/_/husky.sh"
+
+if [ "$SKIP_POST_COMMIT" != "true" ]; then
+	
+	# Get the hash of the previous commit
+	prev_commit_hash=$(git rev-parse HEAD)
+	
+	# Run the prepush script and capture the exit code if it fails
+	npm run prepush || prepush_exit_code=$?
+	
+	# Add all changes, including those made by ESLint and Prettier
+	git add -A
+	
+	# Determine the commit message based on the exit codes
+	if [ "$prepush_exit_code" != "" ]; then
+		commit_message="linting and formatting $prev_commit_hash; ESLint --fix failed with exit code $prepush_exit_code"
+	else
+		commit_message="linting and formatting $prev_commit_hash"
+	fi
+	
+	# Set the SKIP_POST_COMMIT and SKIP_PRE_COMMIT environment variables to prevent infinite recursion
+	export SKIP_POST_COMMIT=true
+	export SKIP_PRE_COMMIT=true
+	
+	# Commit with the appropriate message
+	git commit -m "$commit_message"
+	
+	
+	# Unset the SKIP_POST_COMMIT and SKIP_PRE_COMMIT environment variables
+	unset SKIP_POST_COMMIT
+	unset SKIP_PRE_COMMIT
+
+fi
