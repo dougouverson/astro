@@ -86,12 +86,10 @@ const config: Config = {
 					margin: "0",
 				},
 
-
 				":root": {
 					"-moz-tab-size": "4",
 					tabSize: "4",
 				},
-				
 
 				// Custom stuff
 				"html, body": {
